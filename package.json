@@ -4,6 +4,13 @@
   "publisher": "DanielBoucek",
   "description": "Manages private extension from GitLab Package Registry",
   "icon": "media/icon.jpg",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danielboucek/private-extensions-gitlab"
+  },
+  "bugs": {
+    "url": "https://github.com/danielboucek/private-extensions-gitlab/issues"
+  },
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.91.0"
@@ -11,6 +18,15 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "private",
+    "extension",
+    "gitlab",
+    "registry",
+    "manager",
+    "marketplace"
+  ],
+  "license": "MIT",
   "activationEvents": [
     "onStartupFinished"
   ],

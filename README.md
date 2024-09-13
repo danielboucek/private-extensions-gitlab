@@ -4,7 +4,7 @@ This extension allows you to browse, display and install private extensions usin
 
 This extension works best if you keep automatic updates on, usually you still need to then restart the extension host in the default Extensions panel. Updates are checked only on each startup or you can refresh manually.
 
-<!-- ![]() -->
+![](media/screen.png)
 
 ## Extension Setup
 
@@ -28,21 +28,21 @@ You need to link that .yml config in each repository with the different extensio
 
 ```yml
 deploy:
-	image: node:20.15.0
-	stage: deploy
-	script:
-		- PUBLISHER=$(node -p "require('./package.json').publisher")
-		- NAME=$(node -p "require('./package.json').name")
-		- PACKAGE_NAME="$PUBLISHER.$NAME"
-		- PACKAGE_VERSION=$(node -p "require('./package.json').version")
+  image: node:20.15.0
+  stage: deploy
+  script:
+    - PUBLISHER=$(node -p "require('./package.json').publisher")
+    - NAME=$(node -p "require('./package.json').name")
+    - PACKAGE_NAME="$PUBLISHER.$NAME"
+    - PACKAGE_VERSION=$(node -p "require('./package.json').version")
 
-		- npm install -g @vscode/vsce
-   		- npm ci
-   		- vsce package --allow-missing-repository --skip-license
-		- VSIX_FILE=$(ls *.vsix)
+    - npm install -g @vscode/vsce
+    - npm ci
+    - vsce package --allow-missing-repository --skip-license
+    - VSIX_FILE=$(ls *.vsix)
 
-		- URL="$CI_API_V4_URL/projects/012345/packages/generic/$PACKAGE_NAME/$PACKAGE_VERSION/$VSIX_FILE"
-   		- 'curl --cacert $CI_SERVER_TLS_CA_FILE --fail-with-body --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$VSIX_FILE" "$URL"'
+    - URL="$CI_API_V4_URL/projects/012345/packages/generic/$PACKAGE_NAME/$PACKAGE_VERSION/$VSIX_FILE"
+    - 'curl --cacert $CI_SERVER_TLS_CA_FILE --fail-with-body --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file "$VSIX_FILE" "$URL"'
 ```
 
 _This script is not necessarily right, feel free to write your own config, add some version checking, multiple stages, etc._
