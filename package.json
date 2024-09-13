@@ -1,0 +1,148 @@
+{
+  "name": "private-extensions-gitlab",
+  "displayName": "Private Extension Manager - GitLab",
+  "publisher": "DanielBoucek",
+  "description": "Manages private extension from GitLab Package Registry",
+  "icon": "media/icon.jpg",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Private Marketplace",
+      "properties": {
+        "private-extensions-gitlab.autoUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic updates"
+        },
+        "private-extensions-gitlab.packageUrls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Gitlab Package Registry API URLs with the extension packages. Replace with your gitlab domain and project ID."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "private-extensions-gitlab.fetchPackages",
+        "title": "Fetch Gitlab Packages"
+      },
+      {
+        "command": "private-extensions-gitlab.setToken",
+        "title": "Set GitLab Access Token",
+        "icon": "$(key)"
+      },
+      {
+        "command": "private-extensions-gitlab.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "private-extensions-gitlab.download",
+        "title": "Install",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "private-extensions-gitlab.openSettings",
+        "title": "Open Settings",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "private-extensions-gitlab.openVSIX",
+        "title": "Open"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "privateMarketplace",
+          "title": "Private Marketplace",
+          "icon": "$(package)"
+        }
+      ]
+    },
+    "views": {
+      "privateMarketplace": [
+        {
+          "id": "privateMarketplaceGitlab",
+          "name": "Private Marketplace"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "private-extensions-gitlab.refresh",
+          "when": "view == privateMarketplaceGitlab",
+          "group": "navigation@1"
+        },
+        {
+          "command": "private-extensions-gitlab.setToken",
+          "when": "view == privateMarketplaceGitlab",
+          "group": "navigation@2"
+        },
+        {
+          "command": "private-extensions-gitlab.openSettings",
+          "when": "view == privateMarketplaceGitlab",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "when": "view == privateMarketplaceGitlab && viewItem == canInstall",
+          "command": "private-extensions-gitlab.download",
+          "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "private-extensions-gitlab.openSettings",
+          "when": "false"
+        },
+        {
+          "command": "private-extensions-gitlab.refresh",
+          "when": "false"
+        },
+        {
+          "command": "private-extensions-gitlab.openVSIX",
+          "when": "false"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js",
+    "esbuild-base": "esbuild ./src/extension.js --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --external:@aws-sdk/client-s3",
+    "vscode:prepublish": "npm run esbuild-base -- --minify"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "20.2.5",
+    "@types/vscode": "^1.91.0",
+    "@vscode/test-electron": "^2.3.2",
+    "esbuild": "^0.23.0",
+    "eslint": "^8.41.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "axios": "^1.7.3",
+    "marked": "^14.0.0",
+    "unzipper": "^0.12.3"
+  }
+}

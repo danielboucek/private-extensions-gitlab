@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+</head>
+
+<body>
+	<div class="editor-instance">
+		<div class="extension-editor" data-keybinding-context="21" tabindex="0" role="document" style="outline: none;">
+			<div class="header">
+				<div class="icon-container"><img class="icon" id="icon" alt="" src="">
+				</div>
+				<div class="details">
+					<div class="title"><span class="name" id="extensionName" role="heading" tabindex="0"
+							custom-hover="true"></span><code class="version" custom-hover="true"
+							id="version">v0.0.7</code>
+					</div>
+					<div class="subtitle">
+						<div class="subtitle-entry">
+							<div class="publisher" tabindex="0" custom-hover="true" role="button">
+								<div class="publisher-name" id="extensionId"></div>
+							</div>
+						</div>
+					</div>
+					<div class="description" id="description"></div>
+					<div class="actions-status-container list-layout">
+						<div class="monaco-action-bar">
+							<ul class="actions-container" role="toolbar">
+								<li class="action-item disabled" role="presentation">
+									<a class="action-label codicon extension-action label prominent install-other-server"
+										id="install" role="button">Install</a>
+								</li>
+								<li class="action-item action-dropdown-item empty disabled" role="presentation">
+									<a class="action-label codicon extension-action label uninstall action-dropdown"
+										id="uninstall" role="button">Uninstall</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="body">
+				<div class="navbar">
+					<div class="monaco-action-bar">
+						<ul class="actions-container" role="toolbar">
+							<li class="action-item" role="presentation">
+								<a class="action-label checked" role="button"
+									aria-label="Extension details, rendered from the extension's 'README.md' file">Readme</a>
+							</li>
+							<li class="action-item" role="presentation">
+								<a class="action-label" role="button"
+									aria-label="Extension update history, rendered from the extension's 'CHANGELOG.md' file">Changelog</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+				<div class="content">
+					<div class="details" id="details">
+						<div class="readme-container" id="readmeHtml"></div>
+						<div class="changelog-container" id="changelogHtml" style="display: none;"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+<script>
+	const vscode = acquireVsCodeApi();
+
+	const readmeElement = document.getElementById('readmeHtml');
+	const changelogElement = document.getElementById('changelogHtml');
+	const install = document.querySelector('#install');
+	const uninstall = document.querySelector('#uninstall');
+
+	let pkgData = {};
+
+	window.addEventListener('message', event => {
+		if (event.data.command === 'installSuccess') {
+			install.parentElement.classList.add('disabled');
+			uninstall.parentElement.classList.remove('disabled');
+		} else if (event.data.command === 'uninstallSuccess') {
+			install.parentElement.classList.remove('disabled');
+			uninstall.parentElement.classList.add('disabled');
+		} else {
+			const message = event.data;
+			const packageJsonData = message.packageJsonData;
+			const iconBase64 = message.iconBase64;
+			const readmeHtml = message.readmeHtml;
+			const changelogHtml = message.changelogHtml;
+
+			pkgData = {
+				extension_id: message.extension_id,
+				url: message.url,
+				version: message.version,
+				file_name: message.file_name,
+			}
+
+			if (message.status === 'installed') {
+				install.parentElement.classList.add('disabled');
+				uninstall.parentElement.classList.remove('disabled');
+			} else {
+				install.parentElement.classList.remove('disabled');
+				uninstall.parentElement.classList.add('disabled');
+			}
+
+			// Update the icon
+			const iconElement = document.getElementById('icon');
+			iconElement.src = `data:image/png;base64,${iconBase64}`;
+
+			// Update the version, description, extensionId, and extensionName
+			const versionElement = document.getElementById('version');
+			version.innerText = `v${packageJsonData.version}`;
+			const description = document.getElementById('description');
+			description.innerText = packageJsonData.description;
+			const extensionId = document.getElementById('extensionId');
+			extensionId.innerText = `${packageJsonData.publisher}.${packageJsonData.name}`;
+			const extensionName = document.getElementById('extensionName');
+			extensionName.innerText = packageJsonData.displayName;
+
+			// Update the readme HTML
+			readmeElement.innerHTML = readmeHtml;
+
+			// Update the changelog HTML
+			changelogElement.innerHTML = changelogHtml;
+
+			setViewHeight();
+		}
+	});
+
+	// Set the height of each details div on load and resize
+	function setViewHeight() {
+		const detailsElements = document.querySelectorAll('#details div');
+		detailsElements.forEach(element => {
+			const viewportHeight = window.innerHeight;
+			const elementTopPosition = element.getBoundingClientRect().top;
+			const elementHeight = viewportHeight - elementTopPosition;
+			element.style.height = `${elementHeight}px`;
+			if (elementHeight >= element.scrollHeight) {
+				element.style.overflowY = "hidden";
+			} else {
+				element.style.overflowY = "scroll";
+			}
+		});
+	}
+	window.addEventListener('resize', setViewHeight);
+
+
+	// Add event listeners to the anchors
+	const anchors = document.querySelectorAll('.navbar .action-label');
+
+	anchors.forEach(anchor => {
+		anchor.addEventListener('click', function () {
+			// Remove 'checked' class from all anchors
+			anchors.forEach(a => a.classList.remove('checked'));
+
+			// Add 'checked' class to the clicked anchor
+			this.classList.add('checked');
+
+			// Toggle display property of readmeHtml and changelogHtml
+			if (this.textContent === 'Readme') {
+				readmeElement.style.display = 'block';
+				changelogElement.style.display = 'none';
+			} else if (this.textContent === 'Changelog') {
+				readmeElement.style.display = 'none';
+				changelogElement.style.display = 'block';
+			}
+
+			setViewHeight();
+		});
+	});
+
+	install.addEventListener('click', function () {
+		vscode.postMessage({
+			command: 'install',
+			data: pkgData
+		});
+
+	});
+	uninstall.addEventListener('click', function () {
+		vscode.postMessage({
+			command: 'uninstall',
+			data: pkgData
+		});
+	});
+
+</script>
+
+<style>
+	.monaco-action-bar {
+		height: 100%;
+		white-space: nowrap
+	}
+
+	.monaco-action-bar .actions-container {
+		align-items: center;
+		display: flex;
+		height: 100%;
+		margin: 0 auto;
+		padding: 0;
+		width: 100%
+	}
+
+	.monaco-action-bar .action-item {
+		align-items: center;
+		cursor: pointer;
+		display: block;
+		justify-content: center;
+		position: relative;
+	}
+
+	.monaco-action-bar .action-item.disabled {
+		cursor: default
+	}
+
+	.monaco-action-bar .action-item .codicon,
+	.monaco-action-bar .action-item .icon {
+		display: block
+	}
+
+	.monaco-action-bar .action-item .codicon {
+		align-items: center;
+		display: flex;
+		height: 16px;
+		width: 16px
+	}
+
+	.monaco-action-bar .action-label {
+		border-radius: 5px;
+		display: flex;
+		font-size: 11px;
+		padding: 3px;
+		user-select: none;
+	}
+
+	.monaco-action-bar .action-item.disabled .action-label,
+	.monaco-action-bar .action-item.disabled .action-label:before,
+	.monaco-action-bar .action-item.disabled .action-label:hover {
+		color: var(--vscode-disabledForeground)
+	}
+
+	.monaco-action-bar .action-item.action-dropdown-item {
+		display: flex
+	}
+
+	@font-face {
+		font-display: block;
+		font-family: codicon;
+		src: url(../base/browser/ui/codicons/codicon/codicon.ttf?5d4d76ab2ce5108968ad644d591a16a6) format("truetype")
+	}
+
+	:root {
+		--vscode-sash-size: 4px;
+		--vscode-sash-hover-size: 4px
+	}
+
+	::-ms-clear {
+		display: none
+	}
+
+	body {
+		font-size: 11px;
+		height: 100%;
+		margin: 0;
+		overflow: hidden;
+		padding: 0;
+		user-select: none;
+		-webkit-user-select: none;
+		width: 100%
+	}
+
+	.monaco-action-bar .action-item .action-label.extension-action {
+		line-height: normal;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap
+	}
+
+	.monaco-action-bar .action-dropdown-item>.action-label.extension-action.label,
+	.monaco-action-bar .action-item>.action-label.extension-action.label {
+		padding: 0 5px
+	}
+
+	.monaco-action-bar .action-item .action-label.extension-action.label {
+		outline-offset: 1px
+	}
+
+	.monaco-action-bar .action-dropdown-item .action-label.extension-action.label,
+	.monaco-action-bar .action-item .action-label.extension-action.label {
+		height: auto;
+		line-height: 14px;
+		width: auto
+	}
+
+	.monaco-action-bar .action-item .action-label.extension-action.label {
+		background-color: var(--vscode-extensionButton-background) !important
+	}
+
+	.monaco-action-bar .action-item .action-label.extension-action.label {
+		color: var(--vscode-extensionButton-foreground) !important
+	}
+
+	.monaco-action-bar .action-item:not(.disabled) .action-label.extension-action.label:hover {
+		background-color: var(--vscode-extensionButton-hoverBackground) !important
+	}
+
+	.monaco-action-bar .action-item .action-label.extension-action.label.prominent {
+		background-color: var(--vscode-extensionButton-prominentBackground)
+	}
+
+	.monaco-action-bar .action-item .action-label.extension-action.label.prominent {
+		color: var(--vscode-extensionButton-prominentForeground) !important
+	}
+
+	.monaco-action-bar .action-item.action-item:not(.disabled) .action-label.extension-action.label.prominent:hover {
+		background-color: var(--vscode-extensionButton-prominentHoverBackground)
+	}
+
+	.monaco-action-bar .action-item .action-label.extension-action:not(.disabled) {
+		border: 1px solid var(--vscode-contrastBorder)
+	}
+
+	.monaco-action-bar .action-dropdown-item .action-label.extension-action.label,
+	.monaco-action-bar .action-item .action-label.extension-action.icon,
+	.monaco-action-bar .action-item:not(.disabled) .action-label.extension-action.label {
+		margin-top: 2px
+	}
+
+	.monaco-action-bar .action-item.disabled .action-label.extension-action.install-other-server:not(.installing),
+	.monaco-action-bar .action-item.disabled .action-label.extension-action.uninstall:not(.uninstalling),
+	.monaco-action-bar .action-item.disabled .action-label.extension-action.update {
+		display: none
+	}
+
+	.monaco-action-bar .action-item.disabled .action-label.extension-action.label {
+		opacity: .4 !important
+	}
+
+	.monaco-action-bar .extension-action.label {
+		display: inherit
+	}
+
+	.monaco-action-bar .action-item.disabled .action-label.extension-action {
+		opacity: 1
+	}
+
+	.extension-editor {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		margin: 0 auto;
+		max-width: 80%;
+		overflow: hidden
+	}
+
+	.extension-editor>.header {
+		display: flex;
+		font-size: 14px;
+		overflow: hidden;
+		padding: 20px 20px 14px
+	}
+
+	.extension-editor>.header>.icon-container {
+		position: relative
+	}
+
+	.extension-editor>.header>.icon-container .icon {
+		height: 128px;
+		object-fit: contain;
+		width: 128px
+	}
+
+	.extension-editor>.header>.details {
+		overflow: hidden;
+		padding-left: 20px;
+		user-select: text;
+		-webkit-user-select: text
+	}
+
+	.extension-editor>.header>.details>.title {
+		align-items: center;
+		display: flex
+	}
+
+	.extension-editor>.header>.details>.title>.name {
+		flex: 0;
+		font-size: 26px;
+		font-weight: 600;
+		line-height: 30px;
+		white-space: nowrap
+	}
+
+	.extension-editor>.header>.details>.title>.version {
+		margin-left: 10px;
+		user-select: text;
+		-webkit-user-select: text;
+		white-space: nowrap
+	}
+
+	.extension-editor>.header>.details>.subtitle {
+		height: 20px;
+		line-height: 20px;
+		padding-top: 6px;
+		white-space: nowrap
+	}
+
+	.extension-editor>.header>.details>.subtitle .publisher {
+		align-items: center;
+		display: flex
+	}
+
+	.extension-editor>.header>.details>.subtitle {
+		align-items: center;
+		display: flex
+	}
+
+	.extension-editor>.header>.details>.subtitle>div:not(:first-child):not(:empty):not(.resource) {
+		border-left: 1px solid hsla(0, 0%, 50%, .7);
+		margin-left: 14px;
+		padding-left: 14px
+	}
+
+	.extension-editor>.header>.details>.description {
+		margin-top: 10px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap
+	}
+
+	.extension-editor>.header>.details>.actions-status-container {
+		display: flex;
+		margin-top: 10px
+	}
+
+	.extension-editor>.header>.details>.actions-status-container.list-layout {
+		display: inherit
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar {
+		text-align: initial
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item {
+		flex-shrink: 0;
+		margin-right: 0;
+		overflow: hidden
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item.disabled {
+		min-width: 0
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item .extension-action {
+		margin-bottom: 2px
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item>.extension-action:not(.icon) {
+		margin-left: 2px
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item:not(.checkbox-action-item) .extension-action:not(.icon) {
+		padding-bottom: 0;
+		padding-top: 0
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item>.extension-action {
+		line-height: 22px
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item.action-dropdown-item,
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item:not(.action-dropdown-item):not(.checkbox-action-item)>.extension-action {
+		margin-right: 6px
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item.action-dropdown-item .extension-action.label,
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item>.extension-action.label {
+		font-weight: 600;
+		max-width: 300px
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item.action-dropdown-item>.extension-action.label {
+		border-right-width: 0
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item.action-dropdown-item.empty>.extension-action.label {
+		margin-right: 2px
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item.action-dropdown-item.empty>.extension-action.label,
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item>.extension-action.label {
+		border-radius: 2px
+	}
+
+	.extension-editor>.header>.details>.actions-status-container>.monaco-action-bar>.actions-container>.action-item.action-dropdown-item:not(.empty)>.extension-action.label {
+		border-radius: 2px 0 0 2px
+	}
+
+	.extension-editor>.body {
+		flex: 1;
+		overflow: hidden
+	}
+
+	.extension-editor>.body>.navbar {
+		border-bottom: 1px solid var(--vscode-panelSection-border);
+		font-size: 14px;
+		font-weight: 700;
+		height: 36px;
+		line-height: 36px;
+		padding-left: 20px
+	}
+
+	.extension-editor>.body>.navbar>.monaco-action-bar>.actions-container {
+		justify-content: normal
+	}
+
+	.extension-editor>.body>.navbar>.monaco-action-bar>.actions-container>.action-item {
+		height: 100%
+	}
+
+	.extension-editor>.body>.navbar>.monaco-action-bar>.actions-container>.action-item>.action-label {
+		background: none !important;
+		border-radius: 0 !important;
+		color: var(--vscode-panelTitle-inactiveForeground);
+		font-size: 11px;
+		font-weight: 400;
+		padding: 0 10px;
+		text-transform: uppercase
+	}
+
+	.extension-editor>.body>.navbar>.monaco-action-bar>.actions-container>.action-item>.action-label.checked {
+		border-bottom: 1px solid var(--vscode-panelTitle-activeBorder);
+		color: var(--vscode-panelTitle-activeForeground)
+	}
+
+	.extension-editor>.body>.navbar>.monaco-action-bar>.actions-container>.action-item>.action-label:hover {
+		color: var(--vscode-panelTitle-activeForeground)
+	}
+
+	.extension-editor>.body>.content {
+		height: calc(100% - 36px);
+		overflow: hidden;
+		position: relative;
+		user-select: text;
+		-webkit-user-select: text
+	}
+
+	.extension-editor>.body>.content>.details {
+		display: flex;
+		height: 100%;
+		padding-left: 20px;
+		font-size: 14px;
+	}
+
+	.extension-editor>.body>.content>.details>.readme-container {
+		flex: 1;
+		height: 100%;
+		max-width: 75%;
+		overflow-y: scroll;
+		padding-bottom: 60px;
+		box-sizing: border-box;
+	}
+
+	.extension-editor>.body>.content>.details>.changelog-container {
+		flex: 1;
+		height: 100%;
+		max-width: 75%;
+		overflow-y: scroll;
+		padding-bottom: 60px;
+		box-sizing: border-box;
+	}
+
+	.extension-editor>.body>.content details:not(:first-child) {
+		margin-top: 20px
+	}
+
+	.extension-editor code:not(:empty) {
+		background-color: hsla(0, 0%, 50%, .17);
+		border-radius: 4px;
+		font-family: Consolas, "Courier New", monospace;
+		font-size: 90%;
+		padding: 3px 4px
+	}
+</style>
+
+</html>
