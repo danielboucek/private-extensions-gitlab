@@ -53,7 +53,7 @@ async function getPackageData() {
 		const response = await fetchPackages(url);
 		// Filter the list so it only contains the latest version of each package
 		const packageList = filterPackagesVersion(response);
-		console.log("Filtered Response:", packageList);
+		// console.log("Filtered Response:", packageList);
 
 		// Fetch the project data to get the project/registry name
 		const projectData = await getProjectData(url)
@@ -108,7 +108,7 @@ function filterPackagesVersion(response) {
 function checkExtensionVersion(extensionId, extensionVersion) {
 	// getExtension check for only for installed and enabled extensions -> issue: https://github.com/microsoft/vscode/issues/145307
 	const extension = vscode.extensions.getExtension(extensionId);
-	console.log("Extension:", extension);
+	// console.log("Extension:", extension);
 	if (extension) {
 		if (extension.packageJSON.version < extensionVersion) {
 			return "outdated";
@@ -147,7 +147,7 @@ async function installExtension(pkg, source) {
 			if (err) {
 				console.error(`Error deleting temporary file: ${err}`);
 			} else {
-				console.log('Temporary file deleted successfully.');
+				// console.log('Temporary file deleted successfully.');
 				// Refresh the extension host when updating -- THIS WILL ALSO TERMINATE AND RESTART CURRENT EXTENSION
 				if (pkg.status === "outdated" && source !== "automaticUpdate") {
 					// console.log("Restarting extension host...");
@@ -157,8 +157,9 @@ async function installExtension(pkg, source) {
 			}
 		});
 
-		// Refresh the tree view
-		await vscode.commands.executeCommand('private-extensions-gitlab.refresh');
+		// Update the tree view
+		await vscode.commands.executeCommand('private-extensions-gitlab.update', "install", pkg);
+		return true;
 
 	} catch (error) {
 		console.error(`Error installing the extension: ${error}`);
@@ -197,10 +198,10 @@ async function tempFileStream(pkg) {
  * @returns {number} The number of outdated packages found.
  */
 function checkForUpdates(packageDataList) {
-	console.log("Checking for updates...");
+	console.log("Checks for outdated packages");
 	let outdatedCount = 0;
 	for (const pkg of packageDataList) {
-		if (pkg.status === "outdated") {
+		if (pkg.status === "outdated" && pkg.extension_id) {
 			outdatedCount += 1;
 			const autoUpdate = vscode.workspace.getConfiguration('private-extensions-gitlab').get('autoUpdate');
 			if (autoUpdate) {
@@ -208,7 +209,6 @@ function checkForUpdates(packageDataList) {
 			}
 		}
 	}
-	console.log("Checking finished");
 	return outdatedCount;
 }
 
@@ -264,15 +264,22 @@ function webviewPanelActivate(webviewPanel) {
 	webviewPanel.webview.onDidReceiveMessage(async message => {
 		if (message.command === 'install') {
 			const pkg = message.data;
-			await installExtension(pkg);
-			webviewPanel.webview.postMessage({ command: 'installSuccess' });
+			if (await installExtension(pkg)) {
+				webviewPanel.webview.postMessage({ command: 'installSuccess' });
+			}
 		} else if (message.command === 'uninstall') {
+			const pkg = message.data;
 			const extensionId = message.data.extension_id;
-			await vscode.commands.executeCommand('workbench.extensions.uninstallExtension', extensionId);
-			webviewPanel.webview.postMessage({ command: 'uninstallSuccess' });
+			try {
+				await vscode.commands.executeCommand('workbench.extensions.uninstallExtension', extensionId);
+				webviewPanel.webview.postMessage({ command: 'uninstallSuccess' });
+				// Update the tree view
+				await vscode.commands.executeCommand('private-extensions-gitlab.update', "uninstall", pkg);
+			} catch (error) {
+				console.error(`Error uninstalling the extension: ${error}`);
+				vscode.window.showErrorMessage('Failed to uninstall the extension.');
+			}
 
-			// Refresh the tree view
-			await vscode.commands.executeCommand('private-extensions-gitlab.refresh');
 		};
 	});
 }

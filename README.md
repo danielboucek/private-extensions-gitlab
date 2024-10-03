@@ -50,5 +50,3 @@ _This script is not necessarily right, feel free to write your own config, add s
 ### Known Issues
 
 - There are some issues regarding the extension host and visibility of the disabled extension.
-- Loading indicator when fetching packages does not work properly.
-

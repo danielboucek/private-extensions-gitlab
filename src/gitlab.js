@@ -52,7 +52,7 @@ async function fetchPackages(url) {
 	try {
 		const response = await axios.get(url);
 
-		console.log("fetchPackages - response ", response.data)
+		// console.log("fetchPackages - response ", response.data)
 		return response;
 	} catch (error) {
 		console.error('Failed to fetch GitLab packages:', error);
@@ -69,7 +69,7 @@ async function fetchPackageFiles(packageId, url) {
 	try {
 		const response = await axios.get(`${url}/${packageId}/package_files`);
 
-		console.log("fetchPackageFiles - response", response.data);
+		// console.log("fetchPackageFiles - response", response.data);
 		return response.data;
 	} catch (error) {
 		console.error('Failed to fetch GitLab packages files:', error);
@@ -87,7 +87,7 @@ async function fetchVsixFile(pkg) {
 		const url = `${pkg.url}/generic/${pkg.extension_id}/${pkg.version}/${pkg.file_name}`;
 		const response = await axios.get(url, { responseType: 'stream' });
 
-		console.log("fetchVsixFile - response", response.data);
+		// console.log("fetchVsixFile - response", response.data);
 		return response.data;
 	} catch (error) {
 		console.error('Failed to fetch VSIX file:', error);
@@ -100,7 +100,7 @@ async function getProjectData(url) {
 		const projectUrl = url.replace("/packages", "");
 		const response = await axios.get(projectUrl);
 
-		console.log("fetchProjectData - response ", response.data)
+		// console.log("fetchProjectData - response ", response.data)
 		return response.data;
 	} catch (error) {
 		console.error('Failed to fetch Gitlab Project data:', error);

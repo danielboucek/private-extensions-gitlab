@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/danielboucek/private-extensions-gitlab/issues"
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "engines": {
     "vscode": "^1.91.0"
   },
@@ -63,6 +63,10 @@
         "command": "private-extensions-gitlab.refresh",
         "title": "Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "private-extensions-gitlab.update",
+        "title": "Update"
       },
       {
         "command": "private-extensions-gitlab.download",
@@ -128,6 +132,10 @@
         },
         {
           "command": "private-extensions-gitlab.refresh",
+          "when": "false"
+        },
+        {
+          "command": "private-extensions-gitlab.update",
           "when": "false"
         },
         {
