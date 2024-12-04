@@ -5,6 +5,7 @@ function treeViewActivate(context) {
 	const _onDidChangeTreeData = new vscode.EventEmitter();
 	const onDidChangeTreeData = _onDidChangeTreeData.event;
 	let packages = [];
+	let packagesLoading = false;
 	let isRefreshing = false;
 
 	const treeDataProvider = {
@@ -70,6 +71,13 @@ function treeViewActivate(context) {
 	 * @returns {Promise<vscode.TreeItem[]>} A promise that resolves to an array of TreeItems representing the children of the given element.
 	 */
 	async function getChildren(element) {
+		// If packages are still loading, wait for them to finish before proceeding to check if there are any packages to display.
+		// Prevents the tree view from fetching and displaying duplicate packages, because of this function being called twice at once in some cases.
+		if (packagesLoading) {
+			while (packages.length === 0) {
+				await new Promise(resolve => setTimeout(resolve, 100));
+			}
+		}
 		if (!packages.length) {
 			await getGitLabPackages();
 		}
@@ -96,6 +104,7 @@ function treeViewActivate(context) {
 	 * @returns {Promise<void>} A promise that resolves when the package data has been processed.
 	 */
 	async function getGitLabPackages() {
+		packagesLoading = true;
 		try {
 			const packageList = await getPackageData();
 			updateBadgeCount(packageList);
@@ -131,9 +140,11 @@ function treeViewActivate(context) {
 			}
 		} catch (error) {
 			// console.error('Failed to get GitLab packages:', error);
-			// vscode.window.showErrorMessage('Failed to get GitLab packages.');
+			// vscode.window.showErrorMessage('Failed to get GitLab packages');
 			packages = [];
 			treeView.message = 'Failed to get packages, please try again.';
+		} finally {
+			packagesLoading = false;
 		}
 	}
 
@@ -167,11 +178,7 @@ function treeViewActivate(context) {
 	const treeView = vscode.window.createTreeView('privateMarketplaceGitlab', { treeDataProvider });
 
 	// Call getChildren to populate the tree view during activation
-	if (treeView.visible === true) {
-		getChildren();
-	}
-
-
+	getChildren();
 
 	let refreshCommand = vscode.commands.registerCommand('private-extensions-gitlab.refresh', async () => {
 		await refresh();

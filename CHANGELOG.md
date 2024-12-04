@@ -2,6 +2,13 @@
 
 ### Release Notes
 
+#### 1.1.1
+
+- Added command to remove the stored access token from the SecretStorage
+- Added outputChannel for error and info logging
+- Fixed an issue that caused duplicate packages in the tree view
+- Fixed an issue where automatic updates were checked for only when the tree view opened and not when the extension loaded
+
 #### 1.1.0
 
 - Fixes an issues regarding the loading state of the Tree View

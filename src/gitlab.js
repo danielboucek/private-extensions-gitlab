@@ -1,5 +1,6 @@
 const vscode = require('vscode');
 const axios = require('axios');
+const { logMessage } = require('./log.js');
 
 /**
  * Activates the GitLab functionality.
@@ -16,15 +17,22 @@ async function gitlabActivate(context) {
 
 		if (accessToken) {
 			await context.secrets.store('gitlabAccessToken', accessToken);
-			vscode.window.showInformationMessage('GitLab Access Token stored securely.');
-			setAxiosAccessToken(context);
+			vscode.window.showInformationMessage('GitLab Access Token stored securely');
+			await setAxiosAccessToken(context);
 		} else {
-			vscode.window.showWarningMessage('GitLab Access Token was not set.');
+			vscode.window.showWarningMessage('GitLab Access Token was not set');
 		}
 	});
 
+	// Command to remove the GitLab access token
+	let removeTokenCommand = vscode.commands.registerCommand('private-extensions-gitlab.removeToken', function () {
+		context.secrets.delete('gitlabAccessToken');
+		vscode.window.showInformationMessage('GitLab Access Token removed');
+		delete axios.defaults.headers.common['PRIVATE-TOKEN'];
+	});
+
 	await setAxiosAccessToken(context);
-	context.subscriptions.push(setTokenCommand);
+	context.subscriptions.push(setTokenCommand, removeTokenCommand);
 }
 
 /**
@@ -33,7 +41,9 @@ async function gitlabActivate(context) {
  */
 async function setAxiosAccessToken(context) {
 	const accessToken = await context.secrets.get('gitlabAccessToken');
-	axios.defaults.headers.common['PRIVATE-TOKEN'] = accessToken;
+	if (accessToken) {
+		axios.defaults.headers.common['PRIVATE-TOKEN'] = accessToken;
+	}
 }
 
 /**
@@ -56,7 +66,7 @@ async function fetchPackages(url) {
 		return response;
 	} catch (error) {
 		console.error('Failed to fetch GitLab packages:', error);
-		vscode.window.showErrorMessage('Failed to fetch GitLab packages.');
+		logMessage('Failed to fetch GitLab packages', error, true);
 	}
 }
 
@@ -73,7 +83,7 @@ async function fetchPackageFiles(packageId, url) {
 		return response.data;
 	} catch (error) {
 		console.error('Failed to fetch GitLab packages files:', error);
-		vscode.window.showErrorMessage('Failed to fetch GitLab packages files.');
+		logMessage('Failed to fetch GitLab packages files', error, true);
 	}
 }
 
@@ -91,7 +101,7 @@ async function fetchVsixFile(pkg) {
 		return response.data;
 	} catch (error) {
 		console.error('Failed to fetch VSIX file:', error);
-		vscode.window.showErrorMessage('Failed to fetch VSIX file.');
+		logMessage('Failed to fetch VSIX file', error, true);
 	}
 }
 
@@ -104,7 +114,7 @@ async function getProjectData(url) {
 		return response.data;
 	} catch (error) {
 		console.error('Failed to fetch Gitlab Project data:', error);
-		vscode.window.showErrorMessage('Failed to fetch GitLab Project data.');
+		logMessage('Failed to fetch GitLab Project data', error, true);
 	}
 }
 

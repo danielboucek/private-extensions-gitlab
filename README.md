@@ -10,6 +10,7 @@ This extension works best if you keep automatic updates on, usually you still ne
 
 - Set your Gitlab access token using the command `Set GitLab Access Token`, this token is stored securely in vscode's SecretStorage and is not exposed. You can use personal token or project token scoped at least for `read_api`
 - Set your Gitlab's package registry API URL of your project. You can add multiple URLs if you want to group your extensions in different projects.
+- If you want to have the package registry project set as 'public' you can set the Access Token to a single white space to be able to make the requests.
 - Optional: If a user and his token do not have access to the project repository you can change the general settings to `Allow anyone to pull from Package Registry`
 
 ```
@@ -50,3 +51,4 @@ _This script is not necessarily right, feel free to write your own config, add s
 ### Known Issues
 
 - There are some issues regarding the extension host and visibility of the disabled extension.
+

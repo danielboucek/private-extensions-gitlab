@@ -5,6 +5,7 @@ const tmp = require('tmp');
 const unzipper = require('unzipper');
 const { createWebviewPanel } = require('./webview.js');
 const { marked } = require('marked');
+const { logMessage } = require('./log.js');
 
 function packageHandlerActivate(context) {
 	// Command to fetch the package list -- Probably not needed!
@@ -22,19 +23,7 @@ let packageDataList = [];
  * @returns {Promise<Array<{name: string, extension_id: string, version: string, file_name: string, status: string}>>} The processed packageDataList.
  */
 async function getPackageData() {
-	if (!checkAxiosAccessToken()) {
-		vscode.window.showWarningMessage(
-			'Please set your GitLab Access Token',
-			'Set Token'
-		).then(selection => {
-			if (selection === 'Set Token') {
-				vscode.commands.executeCommand('private-extensions-gitlab.setToken');
-			}
-		});
-		return [];
-	}
-
-	// Get the package URLs from the settings
+	// Get the package URLs from the settings, if none are set, prompt the user to set them
 	const packageUrls = vscode.workspace.getConfiguration('private-extensions-gitlab').get('packageUrls');
 	if (packageUrls.length === 0) {
 		vscode.window.showWarningMessage(
@@ -47,6 +36,19 @@ async function getPackageData() {
 		});
 		return [];
 	}
+
+	if (!checkAxiosAccessToken()) {
+		vscode.window.showWarningMessage(
+			'Please set your GitLab Access Token',
+			'Set Token'
+		).then(selection => {
+			if (selection === 'Set Token') {
+				vscode.commands.executeCommand('private-extensions-gitlab.setToken');
+			}
+		});
+		return [];
+	}
+
 	// Get all the packages from all the URLs provided
 	packageDataList = []; // Start with an empty array
 	for (const url of packageUrls) {
@@ -137,9 +139,11 @@ async function installExtension(pkg, source) {
 		await vscode.commands.executeCommand('workbench.extensions.installExtension', vsixUri);
 
 		if (pkg.status === "outdated" && source !== "automaticUpdate") {
-			vscode.window.showInformationMessage(`Extension ${pkg.extension_id} updated successfully.`);
+			vscode.window.showInformationMessage(`Extension ${pkg.extension_id} updated successfully`);
 		} else if (pkg.status !== "outdated") {
-			vscode.window.showInformationMessage(`Extension ${pkg.extension_id} installed successfully.`);
+			vscode.window.showInformationMessage(`Extension ${pkg.extension_id} installed successfully`);
+		} else if (pkg.status === "outdated" && source === "automaticUpdate") {
+			logMessage(`Automatically updated extension ${pkg.extension_id}`);
 		}
 
 		// Delete the temporary file before the extension host restarts
@@ -147,7 +151,7 @@ async function installExtension(pkg, source) {
 			if (err) {
 				console.error(`Error deleting temporary file: ${err}`);
 			} else {
-				// console.log('Temporary file deleted successfully.');
+				// console.log('Temporary file deleted successfully');
 				// Refresh the extension host when updating -- THIS WILL ALSO TERMINATE AND RESTART CURRENT EXTENSION
 				if (pkg.status === "outdated" && source !== "automaticUpdate") {
 					// console.log("Restarting extension host...");
@@ -162,8 +166,8 @@ async function installExtension(pkg, source) {
 		return true;
 
 	} catch (error) {
-		console.error(`Error installing the extension: ${error}`);
-		vscode.window.showErrorMessage('Failed to install the extension.');
+		console.error(`Error installing extension ${pkg.extension.id}: ${error}`);
+		logMessage(`Failed to install extension ${pkg.extension.id}`, error, true);
 	}
 }
 
@@ -199,6 +203,7 @@ async function tempFileStream(pkg) {
  */
 function checkForUpdates(packageDataList) {
 	console.log("Checks for outdated packages");
+	logMessage('Checking for outdated packages');
 	let outdatedCount = 0;
 	for (const pkg of packageDataList) {
 		if (pkg.status === "outdated" && pkg.extension_id) {
@@ -209,6 +214,7 @@ function checkForUpdates(packageDataList) {
 			}
 		}
 	}
+	logMessage(`${outdatedCount} outdated packages found`);
 	return outdatedCount;
 }
 
@@ -276,8 +282,8 @@ function webviewPanelActivate(webviewPanel) {
 				// Update the tree view
 				await vscode.commands.executeCommand('private-extensions-gitlab.update', "uninstall", pkg);
 			} catch (error) {
-				console.error(`Error uninstalling the extension: ${error}`);
-				vscode.window.showErrorMessage('Failed to uninstall the extension.');
+				console.error(`Error uninstalling extension ${pkg.extension.id}: ${error}`);
+				logMessage(`Failed to uninstall extension ${pkg.extension.id}`, error, true);
 			}
 
 		};
