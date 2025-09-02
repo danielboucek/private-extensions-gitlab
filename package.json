@@ -11,7 +11,7 @@
   "bugs": {
     "url": "https://github.com/danielboucek/private-extensions-gitlab/issues"
   },
-  "version": "1.1.1",
+  "version": "1.1.2",
   "engines": {
     "vscode": "^1.91.0"
   },
@@ -171,6 +171,7 @@
   "dependencies": {
     "axios": "^1.7.3",
     "marked": "^14.0.0",
+    "semver": "^7.7.2",
     "unzipper": "^0.12.3"
   }
 }

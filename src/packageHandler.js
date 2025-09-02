@@ -6,6 +6,7 @@ const unzipper = require('unzipper');
 const { createWebviewPanel } = require('./webview.js');
 const { marked } = require('marked');
 const { logMessage } = require('./log.js');
+const semverGt = require('semver/functions/gt')
 
 function packageHandlerActivate(context) {
 	// Command to fetch the package list -- Probably not needed!
@@ -82,16 +83,15 @@ async function getPackageData() {
 
 /**
  * Filters packages based on their version and for each name keeps the highest version.
- * @param {Array} response - The response array from fetchPackages().
+ * @param {Array} packages - The response array from fetchPackages().
  * @returns {Array} The filtered list of packages.
  */
-function filterPackagesVersion(response) {
-	const packages = response.data;
+function filterPackagesVersion(packages) {
 	const filteredPackages = {};
 
 	packages.forEach((pkg) => {
 		const { name, version } = pkg;
-		if (!filteredPackages[name] || version > filteredPackages[name].version) {
+		if (!filteredPackages[name] || semverGt(version, filteredPackages[name].version)) {
 			filteredPackages[name] = pkg;
 		}
 	});

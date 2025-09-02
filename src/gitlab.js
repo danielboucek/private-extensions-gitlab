@@ -60,10 +60,20 @@ function checkAxiosAccessToken() {
  */
 async function fetchPackages(url) {
 	try {
-		const response = await axios.get(url);
+		let allPackages = [];
+		let page = 1;
+		let totalPages = 1;
+		do {
+			const response = await axios.get(url, { params: { page } });
+			if (Array.isArray(response.data)) {
+				allPackages.push(...response.data);
+			}
+			const headers = response.headers;
+			totalPages = parseInt(headers['x-total-pages'] || headers['X-Total-Pages'] || totalPages, 10);
+			page++;
+		} while (page <= totalPages);
 
-		// console.log("fetchPackages - response ", response.data)
-		return response;
+		return allPackages;
 	} catch (error) {
 		console.error('Failed to fetch GitLab packages:', error);
 		logMessage('Failed to fetch GitLab packages', error, true);

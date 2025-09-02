@@ -2,6 +2,11 @@
 
 ### Release Notes
 
+#### 1.1.2
+
+- Fixed GitLab's packages API pagination issues
+- Fixed incorrect comparison of package versions
+
 #### 1.1.1
 
 - Added command to remove the stored access token from the SecretStorage
