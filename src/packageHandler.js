@@ -230,21 +230,36 @@ async function openVSIX(context, pkg) {
 
 	// Find the package.json file and read and parse its content
 	const packageJson = directory.files.find(file => file.path.toLowerCase().endsWith('extension/package.json'));
+	if (!packageJson) {
+		throw new Error('extension/package.json not found in VSIX');
+	}
 	const packageJsonContent = await packageJson.buffer();
 	const packageJsonData = JSON.parse(packageJsonContent.toString('utf8'));
 
-	const iconImg = directory.files.find(file => file.path.toLowerCase().endsWith(packageJsonData.icon));
-	const iconContent = await iconImg.buffer();
-	const iconBase64 = iconContent.toString('base64');
+	// Optionally extract icon as base64
+	let iconBase64 = null;
+	if (packageJsonData.icon) {
+		const iconImg = directory.files.find(file => file.path.toLowerCase().endsWith(packageJsonData.icon.toLowerCase()));
+		if (iconImg) {
+			const iconContent = await iconImg.buffer();
+			iconBase64 = iconContent.toString('base64');
+		}
+	}
 
-	// Find the README.md and CHANGELOG.md files
+	// Optionally extract README.md
+	let readmeHtml = null;
 	const readmeFile = directory.files.find(file => file.path.toLowerCase().endsWith('extension/readme.md'));
-	const readmeContent = await readmeFile.buffer();
-	const readmeHtml = marked(readmeContent.toString('utf8'));
-
+	if (readmeFile) {
+		const readmeContent = await readmeFile.buffer();
+		readmeHtml = marked(readmeContent.toString('utf8'));
+	}
+	// Optionally extract CHANGELOG.md
+	let changelogHtml = null;
 	const changelogFile = directory.files.find(file => file.path.toLowerCase().endsWith('extension/changelog.md'));
-	const changelogContent = await changelogFile.buffer();
-	const changelogHtml = marked(changelogContent.toString('utf8'));
+	if (changelogFile) {
+		const changelogContent = await changelogFile.buffer();
+		changelogHtml = marked(changelogContent.toString('utf8'));
+	}
 
 	const messageData = {
 		packageJsonData: packageJsonData,

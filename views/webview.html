@@ -108,7 +108,7 @@
 
 			// Update the icon
 			const iconElement = document.getElementById('icon');
-			iconElement.src = `data:image/png;base64,${iconBase64}`;
+			iconElement.src = iconBase64 ? `data:image/png;base64,${iconBase64}` : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiBmaWxsPSIjOGI4ODhmIj48cGF0aCBkPSJNMjIuMjgxIDYuOTY4OTlMMTcuMDMxIDEuNzE4OTlIMTUuOTcwNUwxMi4wMDE1IDUuNjg3OTlWMy43NDg0OUwxMS4yNTE1IDIuOTk4NDlIMi4yNUwxLjUgMy43NDg0OVYyMS43NDg1TDIuMjUgMjIuNDk4NUgyMC4yNUwyMSAyMS43NDg1VjEyLjc0ODVMMjAuMjUgMTEuOTk4NUgxOC4zMTA1TDIyLjI3OTUgOC4wMjk0OVY2Ljk2ODk5SDIyLjI4MVpNMyA0LjQ5OTk5SDEwLjVWMTJIM1Y0LjQ5OTk5Wk0zIDEzLjVIMTAuNVYyMUgzVjEzLjVaTTE5LjUgMjFIMTJWMTMuNUgxOS41VjIxWk0xMiAxMlY5LjMxMDQ5TDE0LjY4OTUgMTJIMTJaTTE2LjUgMTEuNjg5NUwxMi4zMTA1IDcuNDk5OTlMMTYuNSAzLjMxMDQ5TDIwLjY4OTUgNy40OTk5OUwxNi41IDExLjY4OTVaIi8+PC9zdmc+';
 
 			// Update the version, description, extensionId, and extensionName
 			const versionElement = document.getElementById('version');
@@ -121,10 +121,9 @@
 			extensionName.innerText = packageJsonData.displayName;
 
 			// Update the readme HTML
-			readmeElement.innerHTML = readmeHtml;
-
+			readmeElement.innerHTML = readmeHtml || '<em>No README found.</em>';
 			// Update the changelog HTML
-			changelogElement.innerHTML = changelogHtml;
+			changelogElement.innerHTML = changelogHtml || '<em>No changelog found.</em>';
 
 			setViewHeight();
 		}

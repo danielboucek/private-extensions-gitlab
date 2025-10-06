@@ -2,6 +2,11 @@
 
 ### Release Notes
 
+#### 1.1.3
+
+- Fixed an issue where icon was needed in order to open the extension preview
+- Added placeholder icon when non provided
+
 #### 1.1.2
 
 - Fixed GitLab's packages API pagination issues
