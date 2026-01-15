@@ -2,6 +2,10 @@
 
 ### Release Notes
 
+#### 1.1.4
+
+- Added validation for semantic versioning in packages, invalid versions are ignored
+
 #### 1.1.3
 
 - Fixed an issue where icon was needed in order to open the extension preview
@@ -29,4 +33,3 @@
 #### 1.0.0
 
 - Initial release
-

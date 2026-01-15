@@ -7,6 +7,8 @@ const { createWebviewPanel } = require('./webview.js');
 const { marked } = require('marked');
 const { logMessage } = require('./log.js');
 const semverGt = require('semver/functions/gt')
+const semverLt = require('semver/functions/lt')
+const semverValid = require('semver/functions/valid')
 
 function packageHandlerActivate(context) {
 	// Command to fetch the package list -- Probably not needed!
@@ -91,6 +93,10 @@ function filterPackagesVersion(packages) {
 
 	packages.forEach((pkg) => {
 		const { name, version } = pkg;
+		if (!semverValid(version)) {
+			logMessage(`Skipping package ${name} with invalid version: ${version}`);
+			return;
+		}
 		if (!filteredPackages[name] || semverGt(version, filteredPackages[name].version)) {
 			filteredPackages[name] = pkg;
 		}
@@ -112,7 +118,7 @@ function checkExtensionVersion(extensionId, extensionVersion) {
 	const extension = vscode.extensions.getExtension(extensionId);
 	// console.log("Extension:", extension);
 	if (extension) {
-		if (extension.packageJSON.version < extensionVersion) {
+		if (semverLt(extension.packageJSON.version, extensionVersion)) {
 			return "outdated";
 		} else {
 			return "installed";
